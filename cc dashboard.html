@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1d2923">
+  <title>Meter | Budget Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d2923;
+      --muted: #737b73;
+      --paper: #f3f5f0;
+      --white: #fff;
+      --line: #e5e9e2;
+      --green: #b9df69;
+      --green-deep: #385b36;
+      --red: #e35f4c;
+      --red-pale: #fff0ed;
+      --mono: "DM Mono", Consolas, monospace;
+      --sans: "Space Grotesk", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--paper); color: var(--ink); font-family: var(--sans); }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 224px minmax(0, 1fr); }
+    .rail { display: flex; flex-direction: column; min-height: 100vh; padding: 27px 17px 19px; background: var(--ink); color: #f4f6f0; }
+    .brand { display: flex; gap: 11px; align-items: center; padding: 0 9px; font-size: 19px; font-weight: 700; letter-spacing: .2px; }
+    .brand-mark { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 9px; background: var(--green); color: var(--ink); font-family: var(--mono); font-size: 18px; }
+    .workspace-label { margin: 45px 10px 12px; color: #99a49a; font: 10px var(--mono); letter-spacing: 1px; text-transform: uppercase; }
+    .nav { display: grid; gap: 5px; }
+    .nav a { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 6px; color: #bac1ba; text-decoration: none; font-size: 13px; }
+    .nav a[aria-current="page"], .nav a:hover { background: #344239; color: #fff; }
+    .nav-icon { width: 17px; text-align: center; color: var(--green); font-size: 16px; }
+    .rail-device { margin-top: auto; padding: 15px 13px; border: 1px solid #3b4940; border-radius: 7px; background: #26342b; }
+    .rail-device-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 12px; }
+    .online-dot, .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #8bcf76; box-shadow: 0 0 0 3px #8bcf7624; }
+    .rail-device p { margin: 0; color: #aeb8ae; font: 10px/1.7 var(--mono); }
+    .rail-foot { padding: 15px 10px 0; color: #849087; font: 10px var(--mono); }
+    main { width: min(1200px, 100%); margin: 0 auto; padding: 31px 38px 44px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 31px; }
+    .crumb { color: var(--muted); font-size: 12px; }
+    .crumb strong { color: var(--ink); font-weight: 600; }
+    .top-actions { display: flex; align-items: center; gap: 14px; }
+    .feed { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font: 10px var(--mono); letter-spacing: .3px; }
+    .feed .online-dot { width: 6px; height: 6px; }
+    .avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #d9e8c7; color: #37513b; font-size: 11px; font-weight: 700; }
+    .heading-row { display: flex; justify-content: space-between; align-items: end; gap: 18px; margin-bottom: 24px; }
+    h1 { margin: 0; font-size: clamp(26px, 3vw, 34px); line-height: 1.15; letter-spacing: 0; }
+    .subhead { margin: 7px 0 0; color: var(--muted); font-size: 13px; }
+    .period { padding: 9px 12px; border: 1px solid #dce2d9; border-radius: 5px; background: var(--white); color: #444f47; font-size: 11px; white-space: nowrap; }
+    .alert-banner { display: flex; align-items: center; gap: 12px; padding: 13px 16px; margin-bottom: 18px; border: 1px solid #f2c4bb; border-radius: 6px; background: var(--red-pale); color: #823c32; }
+    .alert-lamp { flex: 0 0 9px; height: 9px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 4px #e35f4c20; }
+    .alert-copy { flex: 1; font-size: 12px; line-height: 1.45; }
+    .alert-copy strong { font-weight: 700; }
+    .alert-value { font: 11px var(--mono); white-space: nowrap; }
+    .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; margin-bottom: 16px; }
+    .metric { min-height: 122px; padding: 17px 18px; border: 1px solid var(--line); border-radius: 6px; background: var(--white); }
+    .metric-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 11px; }
+    .metric-number { margin-top: 13px; font-size: 28px; font-weight: 600; line-height: 1; letter-spacing: 0; }
+    .metric-number small { margin-left: 3px; color: var(--muted); font-size: 12px; font-weight: 400; }
+    .metric-note { margin-top: 9px; color: var(--muted); font-size: 10px; }
+    .metric-note .up { color: var(--red); }
+    .metric-note .down { color: var(--green-deep); }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(275px, .9fr); gap: 15px; align-items: start; }
+    .column { display: grid; gap: 15px; min-width: 0; }
+    .panel { border: 1px solid var(--line); border-radius: 6px; background: var(--white); }
+    .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 18px 0; }
+    .panel-title { margin: 0; font-size: 13px; font-weight: 600; }
+    .panel-hint { color: var(--muted); font-size: 10px; }
+    .chart-wrap { padding: 10px 14px 12px; }
+    .chart { display: block; width: 100%; height: 167px; overflow: visible; }
+    .chart text { fill: #8a928b; font: 9px var(--mono); }
+    .chart .gridline { stroke: #edf0eb; stroke-width: 1; }
+    .legend { display: flex; gap: 17px; padding: 0 5px; color: var(--muted); font-size: 10px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 8px; height: 8px; border-radius: 50%; background: #527f58; }
+    .legend .forecast-key { background: #b9df69; }
+    .hardware { padding: 17px 18px 18px; }
+    .hardware-top { display: flex; justify-content: space-between; align-items: start; gap: 12px; margin-bottom: 15px; }
+    .hardware-title { margin: 0; font-size: 13px; font-weight: 600; }
+    .hardware-caption { margin-top: 5px; color: var(--muted); font-size: 10px; }
+    .connected { display: inline-flex; align-items: center; gap: 6px; color: #4c754a; font: 9px var(--mono); white-space: nowrap; }
+    .hardware-body { display: grid; grid-template-columns: minmax(0, 1fr) 145px; align-items: center; gap: 16px; }
+    .control-label { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 10px; color: #4c574f; font-size: 10px; }
+    .budget-output { color: var(--ink); font: 12px var(--mono); }
+    input[type="range"] { display: block; width: 100%; height: 22px; margin: 0; appearance: none; background: transparent; cursor: ew-resize; touch-action: pan-y; }
+    input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 3px; background: linear-gradient(to right, #78985d var(--fill, 31.3%), #e4e9e1 var(--fill, 31.3%)); }
+    input[type="range"]::-moz-range-track { height: 4px; border-radius: 3px; background: #e4e9e1; }
+    input[type="range"]::-moz-range-progress { height: 4px; border-radius: 3px; background: #78985d; }
+    input[type="range"]::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -7px; appearance: none; border: 3px solid #fff; border-radius: 50%; background: #385b36; box-shadow: 0 0 0 1px #385b36, 0 1px 4px #0002; }
+    input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border: 3px solid #fff; border-radius: 50%; background: #385b36; box-shadow: 0 0 0 1px #385b36, 0 1px 4px #0002; }
+    input[type="range"]:focus-visible { outline: 2px solid #84a760; outline-offset: 5px; border-radius: 4px; }
+    .range-ends { display: flex; justify-content: space-between; margin-top: 6px; color: #889087; font: 9px var(--mono); }
+    .slider-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 13px; }
+    .sync-state { min-height: 15px; color: var(--muted); font-size: 9px; }
+    .text-button { padding: 6px 9px; border: 1px solid #dce2d9; border-radius: 4px; background: #fff; font-size: 10px; cursor: pointer; }
+    .text-button:hover { background: #f5f7f2; }
+    .device { padding: 10px; border: 1px solid #36483c; border-radius: 7px; background: #27352d; box-shadow: 0 3px 7px #1d29231c; }
+    .device-top { display: flex; justify-content: space-between; margin-bottom: 7px; color: #bdc7ba; font: 7px var(--mono); letter-spacing: .7px; }
+    .device-window { min-height: 81px; padding: 9px 9px 8px; border: 2px solid #627065; border-radius: 3px; background: #cde89d; color: #20301e; font: 8px/1.55 var(--mono); box-shadow: inset 0 0 12px #6a8b3a27; }
+    .oled-line { display: flex; justify-content: space-between; gap: 5px; }
+    .oled-label { opacity: .76; }
+    .oled-value { font-weight: 500; }
+    .device-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 9px; color: #aeb9b0; font: 7px var(--mono); }
+    .led { width: 8px; height: 8px; border-radius: 50%; background: #8bcf76; box-shadow: 0 0 0 2px #8bcf7626; }
+    .led.is-alert { background: var(--red); box-shadow: 0 0 0 2px #e35f4c37, 0 0 8px #e35f4caa; animation: blink 1s steps(2, start) infinite; }
+    .led.is-testing { animation: blink .32s steps(2, start) 6; }
+    @keyframes blink { to { opacity: .32; } }
+    .services { padding: 15px 18px 14px; }
+    .service-row { display: grid; grid-template-columns: 60px minmax(30px, 1fr) 58px; align-items: center; gap: 9px; margin-top: 15px; font-size: 10px; }
+    .service-name { color: #525d55; }
+    .bar-track { height: 5px; overflow: hidden; border-radius: 5px; background: #edf0eb; }
+    .bar-fill { height: 100%; border-radius: inherit; background: #719467; }
+    .bar-fill.s3 { background: #d5ae50; }
+    .bar-fill.lambda { background: #67aaa0; }
+    .service-value { text-align: right; font: 10px var(--mono); }
+    .service-foot { display: flex; justify-content: space-between; margin-top: 17px; padding-top: 12px; border-top: 1px solid #edf0eb; color: var(--muted); font-size: 9px; }
+    .catalog-content { display: grid; gap: 15px; }
+    .catalog-toolbar { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+    .catalog-search { flex: 1; min-width: 0; height: 38px; padding: 8px 11px; border: 1px solid #dce2d9; border-radius: 4px; background: #fff; color: var(--ink); font-size: 12px; }
+    .catalog-search:focus-visible { outline: 2px solid #84a760; outline-offset: 2px; }
+    .catalog-count { color: var(--muted); font: 10px var(--mono); white-space: nowrap; }
+    .console-link { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 8px 11px; border-radius: 4px; background: var(--ink); color: #fff; text-decoration: none; font-size: 10px; white-space: nowrap; }
+    .console-link:hover { background: #35463a; }
+    .catalog-category { overflow: hidden; }
+    .catalog-category[hidden], .catalog-service[hidden] { display: none; }
+    .catalog-category .panel-head { padding-bottom: 12px; }
+    .catalog-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; padding: 0 14px 14px; }
+    .catalog-service { display: flex; align-items: center; justify-content: space-between; gap: 9px; min-height: 43px; padding: 9px 11px; border: 1px solid #edf0eb; border-radius: 4px; color: #465148; text-decoration: none; font-size: 10px; }
+    .catalog-service:hover { border-color: #b9d39d; background: #f7faf3; color: var(--green-deep); }
+    .catalog-service span:last-child { color: #71856b; font: 9px var(--mono); white-space: nowrap; }
+    .catalog-empty { padding: 20px; color: var(--muted); font-size: 12px; text-align: center; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    .options { padding: 4px 18px 14px; }
+    .option-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; border-bottom: 1px solid #edf0eb; color: #465148; font-size: 10px; }
+    .option-row:last-child { border-bottom: 0; }
+    .option-select { max-width: 165px; padding: 7px 8px; border: 1px solid #dce2d9; border-radius: 4px; background: #fff; color: var(--ink); font-size: 10px; }
+    .option-select:focus-visible { outline: 2px solid #84a760; outline-offset: 2px; }
+    .insights-panel { padding: 14px 18px 15px; }
+    .insight-list { display: grid; gap: 10px; margin-top: 12px; }
+    .insight-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 9px; align-items: start; padding: 9px 0; border-top: 1px solid #edf0eb; }
+    .insight-item:first-child { border-top: 0; }
+    .insight-badge { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #edf7df; color: #395d36; font: 700 11px var(--mono); }
+    .insight-copy { min-width: 0; }
+    .insight-copy strong { display: block; margin-bottom: 3px; color: #36463b; font-size: 10px; }
+    .insight-copy div { color: var(--muted); font-size: 9px; line-height: 1.45; }
+    .insight-save { color: #4c754a; font: 9px var(--mono); }
+    .switch-control { position: relative; flex: 0 0 34px; height: 20px; }
+    .toggle-input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .switch-track { display: block; width: 34px; height: 20px; border-radius: 12px; background: #cbd1ca; transition: background .18s ease; }
+    .switch-track::after { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; content: ""; transition: transform .18s ease; }
+    .toggle-input:checked + .switch-track { background: #638656; }
+    .toggle-input:checked + .switch-track::after { transform: translateX(14px); }
+    .toggle-input:focus-visible + .switch-track { outline: 2px solid #84a760; outline-offset: 2px; }
+    .metric-note.warning { color: #997122; }
+    .log-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+    .log-stat-label { color: var(--muted); font-size: 9px; }
+    .log-stat-value { margin-top: 5px; font: 15px var(--mono); }
+    .log-stat-value.is-over { color: var(--red); }
+    .log-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(95px, .7fr); gap: 9px; padding: 13px 16px 11px; }
+    .log-field { display: grid; gap: 5px; min-width: 0; color: #525d55; font-size: 9px; }
+    .log-field--wide, .log-submit, .log-message { grid-column: 1 / -1; }
+    .log-field input { min-width: 0; width: 100%; height: 32px; padding: 6px 8px; border: 1px solid #dce2d9; border-radius: 4px; background: #fff; color: var(--ink); font-size: 10px; }
+    .log-field input:focus-visible { outline: 2px solid #84a760; outline-offset: 1px; }
+    .log-submit { min-height: 32px; border: 0; border-radius: 4px; background: var(--ink); color: #fff; font-size: 10px; cursor: pointer; }
+    .log-submit:hover { background: #35463a; }
+    .log-message { min-height: 12px; margin: 0; color: var(--muted); font-size: 9px; }
+    .entry-list { padding: 0 16px 10px; }
+    .entry-empty { padding: 12px 0; color: var(--muted); font-size: 10px; }
+    .daily-entry { display: flex; align-items: center; gap: 9px; min-height: 46px; border-top: 1px solid #edf0eb; }
+    .entry-details { flex: 1; min-width: 0; }
+    .entry-item { overflow: hidden; color: #414d44; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .entry-date { margin-top: 3px; color: var(--muted); font: 8px var(--mono); }
+    .entry-amount { font: 10px var(--mono); white-space: nowrap; }
+    .remove-entry { width: 26px; height: 26px; border: 0; border-radius: 4px; background: transparent; color: #788078; font-size: 16px; cursor: pointer; }
+    .remove-entry:hover { background: var(--red-pale); color: var(--red); }
+    .clear-log-button { color: #9d4940; border-color: #efd2cd; }
+    .clear-log-button:disabled { opacity: .45; cursor: not-allowed; }
+    .daily-log-content { width: min(760px, 100%); }
+    .pipeline { padding: 15px 18px; }
+    .pipeline-flow { display: flex; align-items: center; margin-top: 15px; }
+    .pipe-node { flex: 1; min-width: 0; text-align: center; }
+    .pipe-icon { display: grid; place-items: center; width: 29px; height: 29px; margin: auto; border: 1px solid #dce5d8; border-radius: 50%; background: #f4f7f0; color: #496648; font: 10px var(--mono); }
+    .pipe-name { margin-top: 7px; color: #5f6961; font-size: 8px; white-space: nowrap; }
+    .pipe-arrow { width: 14px; height: 1px; margin: 0 -2px 15px; background: #cdd5cc; }
+    .footnote { margin: 20px 1px 0; color: #858d85; font-size: 9px; line-height: 1.6; }
+    @media (max-width: 1000px) {
+      .app { grid-template-columns: 190px minmax(0, 1fr); }
+      main { padding: 26px 24px 36px; }
+      .layout { grid-template-columns: minmax(0, 1.2fr) minmax(250px, .9fr); gap: 12px; }
+      .hardware-body { grid-template-columns: minmax(0, 1fr) 128px; gap: 11px; }
+      .catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 760px) {
+      .app { display: block; }
+      .rail { min-height: auto; padding: 13px 16px; }
+      .brand { padding: 0 2px; }
+      .workspace-label, .rail-device, .rail-foot { display: none; }
+      .nav { display: flex; gap: 4px; margin-top: 12px; overflow-x: auto; }
+      .nav a { flex: 0 0 auto; padding: 8px 10px; font-size: 11px; }
+      main { padding: 22px 18px 32px; }
+      .topbar { margin-bottom: 23px; }
+      .layout { grid-template-columns: 1fr; }
+      .column:last-child { grid-row: 1; }
+      .column:first-child { grid-row: 2; }
+      .pipeline { display: none; }
+      .catalog-toolbar { flex-wrap: wrap; }
+      .catalog-search { flex-basis: 100%; }
+    }
+    @media (max-width: 480px) {
+      main { padding: 19px 13px 27px; }
+      .heading-row { align-items: start; flex-direction: column; gap: 13px; }
+      .period { align-self: start; }
+      .metrics { gap: 7px; }
+      .metric { min-height: 102px; padding: 12px 10px; }
+      .metric-top { min-height: 25px; align-items: start; font-size: 9px; line-height: 1.3; }
+      .metric-number { margin-top: 10px; font-size: 21px; }
+      .metric-number small { font-size: 9px; }
+      .metric-note { font-size: 8px; line-height: 1.35; }
+      .alert-banner { align-items: start; padding: 11px; }
+      .alert-value { font-size: 9px; }
+      .log-form, .log-summary, .entry-list { padding-right: 12px; padding-left: 12px; }
+      .hardware { padding: 14px 13px; }
+      .hardware-body { grid-template-columns: minmax(0, 1fr) 119px; gap: 9px; }
+      .chart { height: 145px; }
+      .feed { font-size: 8px; }
+      .top-actions { gap: 9px; }
+      .catalog-grid { grid-template-columns: 1fr; }
+      .catalog-count { margin-right: auto; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="rail" aria-label="Main navigation">
+      <div class="brand"><span class="brand-mark">m</span><span>meter</span></div>
+      <div class="workspace-label">Workspace</div>
+      <nav class="nav">
+        <a href="#overview" data-view="overview" aria-current="page"><span class="nav-icon" aria-hidden="true">◫</span>Overview</a>
+        <a href="#aws-services" data-view="aws-services"><span class="nav-icon" aria-hidden="true">▤</span>AWS services</a>
+        <a href="#hardware"><span class="nav-icon" aria-hidden="true">⊙</span>Device</a>
+        <a href="#daily-log" data-view="daily-log"><span class="nav-icon" aria-hidden="true">≡</span>Daily log</a>
+      </nav>
+      <div class="rail-device">
+        <div class="rail-device-head"><span>ESP32 · METER-01</span><span class="online-dot" aria-label="Online"></span></div>
+        <p>WI-FI CONNECTED<br>AWS IOT CORE<br>REGION · <span id="currentRegion">US-EAST-1</span></p>
+      </div>
+      <div class="rail-foot">BUILD 0.9.4 · DEMO MODE</div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div class="crumb">Workspace&nbsp; / &nbsp;<strong id="currentPageName">Cost overview</strong></div>
+        <div class="top-actions"><span class="feed"><i class="online-dot"></i> SIMULATED FEED</span><span class="avatar" aria-label="User">RA</span></div>
+      </header>
+
+      <section class="page-view" id="overview" aria-labelledby="page-title">
+        <div class="heading-row">
+          <div><h1>Budget Planner</h1><p class="subhead">One tactile limit. A clearer view of what your cloud will cost.</p></div>
+          <div class="period" id="period">Monthly view · INR</div>
+        </div>
+        <div class="alert-banner" id="alertBanner" role="status" aria-live="polite">
+          <span class="alert-lamp" id="alertLamp" aria-hidden="true"></span>
+          <div class="alert-copy" id="alertCopy"><strong>Forecast over your limit.</strong> Your desk device is signalling an estimated overspend.</div>
+          <span class="alert-value" id="alertValue">+$48.00</span>
+        </div>
+
+        <div class="metrics" aria-label="Monthly cost summary">
+          <article class="metric"><div class="metric-top"><span>Spent so far</span><span>This month</span></div><div class="metric-number">₹286.42</div><div class="metric-note"><span class="up">↑ 8.2%</span> vs. last month to date</div></article>
+          <article class="metric"><div class="metric-top"><span>Projected total</span><span>Run-rate estimate</span></div><div class="metric-number" id="forecastMetric">₹368.00</div><div class="metric-note">Based on current daily usage</div></article>
+          <article class="metric"><div class="metric-top"><span>Monthly budget</span><span>Hardware set</span></div><div class="metric-number" id="budgetMetric">₹320<small>.00</small></div><div class="metric-note" id="capacityNote">Forecast uses 115% of budget</div></article>
+        </div>
+
+        <div class="layout">
+          <div class="column">
+            <section class="panel" aria-labelledby="trend-title">
+              <div class="panel-head"><h2 class="panel-title" id="trend-title">Cost trajectory</h2><span class="panel-hint">INR · cumulative</span></div>
+              <div class="chart-wrap">
+                <svg class="chart" viewBox="0 0 540 170" role="img" aria-label="Chart of actual cloud spend and forecast compared with monthly budget">
+                  <line class="gridline" x1="45" y1="20" x2="523" y2="20"/><line class="gridline" x1="45" y1="58" x2="523" y2="58"/><line class="gridline" x1="45" y1="96" x2="523" y2="96"/><line class="gridline" x1="45" y1="134" x2="523" y2="134"/>
+                  <text id="yTickTop" x="4" y="23">₹450</text><text id="yTickHigh" x="4" y="61">₹300</text><text id="yTickLow" x="4" y="99">₹150</text><text id="yTickBottom" x="16" y="137">₹0</text>
+                  <text x="45" y="157">01</text><text x="153" y="157">08</text><text x="261" y="157">15</text><text x="369" y="157">22</text><text x="490" y="157">30</text>
+                  <line id="budgetLine" x1="45" y1="53" x2="523" y2="53" stroke="#e35f4c" stroke-width="1.5" stroke-dasharray="4 4"/>
+                  <text id="budgetLabel" x="457" y="47" fill="#c05443">BUDGET</text>
+                  <g id="costPlot">
+                    <path d="M45 132 C83 126 104 119 137 114 S194 99 225 95 S285 81 313 74 S373 63 401 55 S459 43 493 39 L493 134 L45 134Z" fill="#527f5816"/>
+                    <path d="M45 132 C83 126 104 119 137 114 S194 99 225 95 S285 81 313 74 S373 63 401 55 S459 43 493 39" fill="none" stroke="#527f58" stroke-width="2.5" stroke-linecap="round"/>
+                    <path d="M493 39 C507 36 516 30 523 27" fill="none" stroke="#a7ce61" stroke-width="2.5" stroke-dasharray="5 4" stroke-linecap="round"/>
+                    <circle cx="493" cy="39" r="4" fill="#527f58" stroke="#fff" stroke-width="2"/>
+                  </g>
+                </svg>
+                <div class="legend"><span><i></i> Actual spend</span><span><i class="forecast-key"></i> Forecast</span><span><i style="background:#e35f4c"></i> Budget limit</span></div>
+              </div>
+            </section>
+
+            <section class="panel hardware" id="hardware" aria-labelledby="hardware-title">
+              <div class="hardware-top">
+                <div><h2 class="hardware-title" id="hardware-title">Physical budget control</h2><div class="hardware-caption">Adjust the limit, just like moving the desk slider.</div></div>
+                <span class="connected"><i class="online-dot"></i> DEVICE ONLINE</span>
+              </div>
+              <div class="hardware-body">
+                <div>
+                  <label class="control-label" for="budgetSlider"><span>Monthly budget threshold</span><output class="budget-output" id="budgetOutput" for="budgetSlider">₹320</output></label>
+                  <input id="budgetSlider" type="range" min="10" max="60000" step="10" value="320" aria-label="Set monthly cloud budget from 10 to 60000 rupees">
+                  <div class="range-ends"><span>₹10</span><span>₹60,000</span></div>
+                  <div class="slider-actions"><span class="sync-state" id="syncState" aria-live="polite">Slider value mirrored to OLED</span><button class="text-button" id="resetButton" type="button">Reset to ₹320</button></div>
+                </div>
+                <div class="device" aria-label="ESP32 device with OLED display and alert LED">
+                  <div class="device-top"><span>METER-01</span><span>OLED 128×64</span></div>
+                  <div class="device-window" aria-live="polite">
+                    <div class="oled-line"><span class="oled-label">SPENT</span><span class="oled-value">₹286.42</span></div>
+                    <div class="oled-line"><span class="oled-label">EST. MONTH</span><span class="oled-value">₹368.00</span></div>
+                    <div class="oled-line"><span class="oled-label">LIMIT</span><span class="oled-value" id="oledBudget">₹320</span></div>
+                  </div>
+                  <div class="device-bottom"><span>GPIO 2 · ALERT</span><span class="led is-alert" id="deviceLed" aria-label="Alert LED is on"></span></div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="column">
+            <section class="panel" id="services" aria-labelledby="services-title">
+              <div class="panel-head"><h2 class="panel-title" id="services-title">Service breakdown</h2><span class="panel-hint">Month to date</span></div>
+              <div class="services">
+                <div class="service-row"><span class="service-name">EC2</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="service-value">₹166.42</span></div>
+                <div class="service-row"><span class="service-name">S3</span><div class="bar-track"><div class="bar-fill s3" style="width:43%"></div></div><span class="service-value">₹72.00</span></div>
+                <div class="service-row"><span class="service-name">Lambda</span><div class="bar-track"><div class="bar-fill lambda" style="width:29%"></div></div><span class="service-value">₹48.00</span></div>
+                <div class="service-foot"><span>3 services monitored</span><span>Total <strong>₹286.42</strong></span></div>
+              </div>
+            </section>
+
+            <section class="panel" aria-labelledby="options-title">
+              <div class="panel-head"><h2 class="panel-title" id="options-title">Planner options</h2><span class="panel-hint">Device &amp; billing</span></div>
+              <div class="options">
+                <label class="option-row" for="regionSelect"><span>AWS pricing region</span><select class="option-select" id="regionSelect"><option value="ap-south-1">India (Mumbai)</option><option value="us-east-1" selected>US (N. Virginia)</option><option value="af-south-1">Africa (Cape Town)</option><option value="ap-southeast-1">Asia Pacific (Singapore)</option></select></label>
+                <label class="option-row" for="warningThreshold"><span>Early warning at</span><select class="option-select" id="warningThreshold"><option value="60">60% of budget</option><option value="70">70% of budget</option><option value="80">80% of budget</option><option value="90" selected>90% of budget</option><option value="100">100% of budget</option></select></label>
+                <label class="option-row" for="ledEnabled"><span>Red LED on overspend</span><span class="switch-control"><input class="toggle-input" id="ledEnabled" type="checkbox" checked><span class="switch-track" aria-hidden="true"></span></span></label>
+              </div>
+            </section>
+
+            <section class="panel insights-panel" aria-labelledby="insights-title">
+              <div class="panel-head"><h2 class="panel-title" id="insights-title">Smart recommendations</h2><span class="panel-hint">AI hints</span></div>
+              <div class="insight-list" id="insightList" aria-live="polite"></div>
+            </section>
+
+            <section class="panel pipeline" aria-labelledby="pipeline-title">
+              <div class="panel-head" style="padding:0"><h2 class="panel-title" id="pipeline-title">Signal path</h2><span class="panel-hint">End-to-end</span></div>
+              <div class="pipeline-flow" aria-label="ESP32 to AWS IoT Core to Lambda to OLED and LED">
+                <div class="pipe-node"><div class="pipe-icon">ADC</div><div class="pipe-name">ESP32 slider</div></div><span class="pipe-arrow"></span>
+                <div class="pipe-node"><div class="pipe-icon">MQ</div><div class="pipe-name">IoT Core</div></div><span class="pipe-arrow"></span>
+                <div class="pipe-node"><div class="pipe-icon">λ</div><div class="pipe-name">Lambda</div></div><span class="pipe-arrow"></span>
+                <div class="pipe-node"><div class="pipe-icon">UI</div><div class="pipe-name">OLED + LED</div></div>
+              </div>
+            </section>
+            <p class="footnote">Demo values illustrate the interface and are not fetched from AWS. A production device can publish its slider threshold over MQTT to AWS IoT Core, where Lambda can evaluate billing and return the alert state.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-view" id="daily-log" aria-labelledby="daily-log-title" hidden>
+        <div class="heading-row">
+          <div><h1 id="daily-log-title">Daily spend log</h1><p class="subhead">Record each expense and track what remains against your monthly limit.</p></div>
+          <div class="period">INR · Current month</div>
+        </div>
+        <div class="daily-log-content">
+          <section class="panel" aria-label="Expense log and monthly balance">
+            <div class="panel-head">
+              <h2 class="panel-title">Expense entries</h2>
+              <div class="log-header-actions"><span class="panel-hint" id="entryCount">0 entries</span><button class="text-button clear-log-button" id="clearLogButton" type="button" disabled>Reset list</button></div>
+            </div>
+            <div class="log-summary" aria-live="polite">
+                <div><div class="log-stat-label">Used this month</div><div class="log-stat-value" id="loggedTotal">₹0.00</div></div>
+              <div><div class="log-stat-label" id="logBalanceLabel">Remaining this month</div><div class="log-stat-value" id="logBalance">₹320.00</div></div>
+            </div>
+            <form class="log-form" id="logForm">
+              <label class="log-field log-field--wide" for="expenseItem">What was it for?<input id="expenseItem" name="item" type="text" maxlength="80" placeholder="e.g. EC2 compute" required></label>
+              <label class="log-field" for="expenseDate">Date<input id="expenseDate" name="date" type="date" required></label>
+              <label class="log-field" for="expenseAmount">Amount (₹)<input id="expenseAmount" name="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required></label>
+              <button class="log-submit" type="submit">Add expense</button>
+              <p class="log-message" id="logMessage" aria-live="polite"></p>
+            </form>
+            <div class="entry-list" id="entryList" aria-label="Recorded expenses"></div>
+          </section>
+
+          <p class="footnote">Entries are saved in this browser. The AWS cost figures on Overview are a separate simulated feed.</p>
+        </div>
+      </section>
+
+      <section class="page-view" id="aws-services" aria-labelledby="aws-services-title" hidden>
+        <div class="heading-row">
+          <div><h1 id="aws-services-title">AWS service directory</h1><p class="subhead">Browse the AWS services you listed and open their official AWS search results.</p></div>
+          <div class="period">Official AWS links</div>
+        </div>
+        <div class="catalog-content">
+          <div class="panel catalog-toolbar">
+            <label class="sr-only" for="serviceSearch">Search AWS services</label>
+            <input class="catalog-search" id="serviceSearch" type="search" placeholder="Search services or categories…" autocomplete="off">
+            <span class="catalog-count" id="catalogCount" aria-live="polite"></span>
+            <a class="console-link" href="https://console.aws.amazon.com/" target="_blank" rel="noopener noreferrer">Open AWS Console ↗</a>
+          </div>
+          <div id="serviceCatalog" aria-live="polite"></div>
+          <p class="footnote">Service links open AWS’s official website search for that service. The console requires AWS sign-in. This directory does not connect an AWS account or load live usage or billing data; the cost dashboard remains in demo mode.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+    const budgetSlider = document.querySelector("#budgetSlider");
+    const budgetOutput = document.querySelector("#budgetOutput");
+    const budgetMetric = document.querySelector("#budgetMetric");
+    const oledBudget = document.querySelector("#oledBudget");
+    const capacityNote = document.querySelector("#capacityNote");
+    const alertBanner = document.querySelector("#alertBanner");
+    const alertLamp = document.querySelector("#alertLamp");
+    const alertCopy = document.querySelector("#alertCopy");
+    const alertValue = document.querySelector("#alertValue");
+    const deviceLed = document.querySelector("#deviceLed");
+    const budgetLine = document.querySelector("#budgetLine");
+    const budgetLabel = document.querySelector("#budgetLabel");
+    const costPlot = document.querySelector("#costPlot");
+    const yTicks = ["#yTickTop", "#yTickHigh", "#yTickLow", "#yTickBottom"].map((selector) => document.querySelector(selector));
+    const syncState = document.querySelector("#syncState");
+    const regionSelect = document.querySelector("#regionSelect");
+    const warningThreshold = document.querySelector("#warningThreshold");
+    const ledEnabled = document.querySelector("#ledEnabled");
+    const currentRegion = document.querySelector("#currentRegion");
+    const insightList = document.querySelector("#insightList");
+    const logForm = document.querySelector("#logForm");
+    const expenseItem = document.querySelector("#expenseItem");
+    const expenseDate = document.querySelector("#expenseDate");
+    const expenseAmount = document.querySelector("#expenseAmount");
+    const entryList = document.querySelector("#entryList");
+    const entryCount = document.querySelector("#entryCount");
+    const clearLogButton = document.querySelector("#clearLogButton");
+    const loggedTotal = document.querySelector("#loggedTotal");
+    const logBalanceLabel = document.querySelector("#logBalanceLabel");
+    const logBalance = document.querySelector("#logBalance");
+    const logMessage = document.querySelector("#logMessage");
+    const overviewView = document.querySelector("#overview");
+    const dailyLogView = document.querySelector("#daily-log");
+    const awsServicesView = document.querySelector("#aws-services");
+    const currentPageName = document.querySelector("#currentPageName");
+    const serviceCatalog = document.querySelector("#serviceCatalog");
+    const serviceSearch = document.querySelector("#serviceSearch");
+    const catalogCount = document.querySelector("#catalogCount");
+    const forecast = 368;
+    const spent = 286.42;
+    const money = (value) => `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const storageKey = "budgetPlannerDailyExpenses";
+    let expenses = [];
+
+    const awsServiceCategories = [
+      ["Compute", ["EC2", "Lightsail", "Lambda", "Batch", "Elastic Beanstalk", "Serverless Application Repository", "AWS Outposts", "EC2 Image Builder", "AWS App Runner", "Parallel Computing Service", "AWS Global View"]],
+      ["Containers", ["Elastic Container Service", "Elastic Kubernetes Service", "Red Hat OpenShift Service on AWS", "Elastic Container Registry"]],
+      ["Storage", ["S3", "EFS", "FSx", "S3 Glacier", "Storage Gateway", "AWS Backup", "Recycle Bin", "AWS Elastic Disaster Recovery"]],
+      ["Database", ["Aurora and RDS", "ElastiCache", "Neptune", "Amazon DocumentDB", "Amazon Keyspaces", "Amazon Timestream", "DynamoDB", "Aurora DSQL", "Amazon MemoryDB", "Oracle Database@AWS"]],
+      ["Migration & Transfer", ["AWS Migration Hub", "AWS Transform MGN", "Application Discovery Service", "Database Migration Service", "AWS Transfer Family", "AWS Snow Family", "DataSync", "AWS Transform", "AWS Mainframe Modernization", "Amazon Elastic VMware Service"]],
+      ["Networking & Content Delivery", ["VPC", "CloudFront", "API Gateway", "Direct Connect", "AWS App Mesh", "Global Accelerator", "Route 53", "AWS Data Transfer Terminal", "Amazon Route 53 Global Resolver", "AWS Cloud Map", "RTB Fabric", "Application Recovery Controller"]],
+      ["Developer Tools", ["CodeCommit", "CodeBuild", "CodeDeploy", "CodePipeline", "Cloud9", "CloudShell", "X-Ray", "AWS FIS", "Infrastructure Composer", "AWS App Studio", "AWS DevOps Agent", "AWS AppConfig", "CodeArtifact", "Amazon Q Developer", "Amazon CodeCatalyst", "Kiro"]],
+      ["Customer Enablement", ["AWS IQ", "Managed Services", "Activate for Startups", "AWS re:Post Private", "Support"]],
+      ["Blockchain", ["Amazon Managed Blockchain"]],
+      ["Satellite", ["Ground Station"]],
+      ["Quantum Technologies", ["Amazon Braket"]],
+      ["Management & Governance", ["AWS Organizations", "CloudWatch", "AWS Auto Scaling", "CloudFormation", "AWS Config", "Service Catalog", "Systems Manager", "Trusted Advisor", "Control Tower", "AWS Well-Architected Tool", "Amazon Q Developer in chat applications (previously AWS Chatbot)", "Launch Wizard", "AWS Compute Optimizer", "Resource Groups & Tag Editor", "Amazon Grafana", "Amazon Prometheus", "AWS Resilience Hub", "Incident Manager", "AWS for SAP", "AWS Health Dashboard", "AWS Proton", "AWS Sustainability", "AWS User Notifications", "AWS Partner Central", "CloudTrail", "AWS License Manager", "AWS Resource Explorer", "Service Quotas"]],
+      ["Media Services", ["Kinesis Video Streams", "MediaConvert", "MediaLive", "MediaPackage", "MediaStore", "MediaTailor", "Elemental Appliances & Software", "Amazon Interactive Video Service", "Elemental Inference", "AWS Deadline Cloud", "MediaConnect"]],
+      ["Machine Learning", ["Amazon SageMaker AI", "Amazon Augmented AI", "Amazon CodeGuru", "Amazon DevOps Guru", "Amazon Comprehend", "Amazon Forecast", "Amazon Fraud Detector", "Amazon Kendra", "Amazon Personalize", "Amazon Polly", "Amazon Rekognition", "Amazon Textract", "Amazon Transcribe", "Amazon Translate", "Amazon Monitron", "AWS HealthLake", "Amazon Q Business", "Amazon Bedrock (mantle endpoint)", "AWS Agent Registry", "Claude Platform on AWS", "AWS HealthOmics", "Amazon Nova Act", "Amazon Bedrock", "Amazon Bedrock AgentCore", "Amazon Q", "Amazon Comprehend Medical", "Amazon Lex", "Amazon Bio Discovery", "AWS HealthImaging"]],
+      ["Analytics", ["Athena", "Amazon Redshift", "CloudSearch", "Amazon OpenSearch Service", "Kinesis", "QuickSight", "AWS Data Exchange", "AWS Lake Formation", "MSK", "AWS Glue DataBrew", "Managed Apache Flink", "EMR", "AWS Clean Rooms", "Amazon SageMaker", "AWS Entity Resolution", "AWS Glue", "Amazon Data Firehose", "Amazon DataZone", "Amazon Quick"]],
+      ["Security, Identity, & Compliance", ["Resource Access Manager", "Cognito", "Secrets Manager", "GuardDuty", "Amazon Inspector", "Amazon Macie", "IAM Identity Center", "Certificate Manager", "Key Management Service", "CloudHSM", "Directory Service", "AWS Firewall Manager", "AWS Artifact", "Detective", "AWS Signer", "Security Lake", "AWS Security Agent (now part of AWS Continuum)", "Amazon Verified Permissions", "AWS Audit Manager", "Security Hub CSPM", "IAM", "WAF & Shield", "Security Hub", "AWS Private Certificate Authority", "Network Security Manager", "AWS Payment Cryptography", "AWS Security Incident Response"]],
+      ["Cloud Financial Management", ["AWS Marketplace", "AWS Billing Conductor", "AWS FinOps Agent", "Billing and Cost Management"]],
+      ["Front-end Web & Mobile", ["AWS Amplify", "AWS AppSync", "Device Farm", "Amazon Location Service"]],
+      ["Application Integration", ["Step Functions", "Amazon AppFlow", "Amazon MQ", "Simple Notification Service", "Simple Queue Service", "SWF", "Managed Apache Airflow", "AWS B2B Data Interchange", "Amazon EventBridge"]],
+      ["Business Applications", ["Amazon Connect Customer", "Amazon Chime", "Amazon Simple Email Service", "Amazon WorkDocs", "Amazon WorkMail", "Amazon Connect Health", "Amazon Connect Talent", "Amazon Connect Decisions", "Amazon Pinpoint", "AWS Wickr", "AWS AppFabric", "AWS End User Messaging", "Amazon Chime SDK"]],
+      ["End User Computing", ["WorkSpaces", "WorkSpaces Applications", "WorkSpaces Thin Client", "WorkSpaces Secure Browser"]],
+      ["Internet of Things", ["IoT Device Defender", "IoT Device Management", "IoT Greengrass", "IoT SiteWise", "IoT Core", "IoT TwinMaker", "AWS IoT FleetWise"]],
+      ["Game Development", ["Amazon GameLift Servers", "Amazon GameLift Streams"]]
+    ];
+
+    function renderServiceCatalog(query = "") {
+      const normalizedQuery = query.trim().toLocaleLowerCase();
+      let visibleCount = 0;
+      serviceCatalog.replaceChildren();
+
+      for (const [category, services] of awsServiceCategories) {
+        const matchingServices = services.filter((service) =>
+          `${category} ${service}`.toLocaleLowerCase().includes(normalizedQuery)
+        );
+        if (matchingServices.length === 0) continue;
+        visibleCount += matchingServices.length;
+
+        const section = document.createElement("section");
+        section.className = "panel catalog-category";
+        section.setAttribute("aria-label", category);
+        const header = document.createElement("div");
+        header.className = "panel-head";
+        const title = document.createElement("h2");
+        title.className = "panel-title";
+        title.textContent = category;
+        const count = document.createElement("span");
+        count.className = "panel-hint";
+        count.textContent = `${matchingServices.length} ${matchingServices.length === 1 ? "service" : "services"}`;
+        header.append(title, count);
+
+        const grid = document.createElement("div");
+        grid.className = "catalog-grid";
+        for (const service of matchingServices) {
+          const link = document.createElement("a");
+          link.className = "catalog-service";
+          link.href = `https://aws.amazon.com/search/?${new URLSearchParams({ searchQuery: service })}`;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          const name = document.createElement("span");
+          name.textContent = service;
+          const indicator = document.createElement("span");
+          indicator.setAttribute("aria-hidden", "true");
+          indicator.textContent = "AWS ↗";
+          link.append(name, indicator);
+          grid.append(link);
+        }
+        section.append(header, grid);
+        serviceCatalog.append(section);
+      }
+
+      catalogCount.textContent = `${visibleCount} ${visibleCount === 1 ? "service" : "services"}`;
+      if (visibleCount === 0) {
+        const empty = document.createElement("div");
+        empty.className = "panel catalog-empty";
+        empty.textContent = "No AWS services match your search.";
+        serviceCatalog.append(empty);
+      }
+    }
+
+    try {
+      const savedExpenses = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      if (Array.isArray(savedExpenses)) {
+        expenses = savedExpenses.filter((entry) => entry && typeof entry.id === "string" && typeof entry.item === "string" && typeof entry.date === "string" && Number.isFinite(Number(entry.amount)) && Number(entry.amount) > 0);
+      }
+    } catch {
+      logMessage.textContent = "Browser storage is unavailable; entries will not persist.";
+    }
+
+    function currentDateString() {
+      const date = new Date();
+      date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+      return date.toISOString().slice(0, 10);
+    }
+
+    function renderExpenseList() {
+      entryList.replaceChildren();
+      const sortedExpenses = [...expenses].sort((first, second) => second.date.localeCompare(first.date) || second.id.localeCompare(first.id));
+      entryCount.textContent = `${expenses.length} ${expenses.length === 1 ? "entry" : "entries"}`;
+      clearLogButton.disabled = expenses.length === 0;
+
+      if (sortedExpenses.length === 0) {
+        const emptyState = document.createElement("div");
+        emptyState.className = "entry-empty";
+        emptyState.textContent = "No expenses logged yet.";
+        entryList.append(emptyState);
+        return;
+      }
+
+      for (const entry of sortedExpenses) {
+        const row = document.createElement("div");
+        row.className = "daily-entry";
+        const details = document.createElement("div");
+        details.className = "entry-details";
+        const item = document.createElement("div");
+        item.className = "entry-item";
+        item.textContent = entry.item;
+        const date = document.createElement("div");
+        date.className = "entry-date";
+        date.textContent = new Date(`${entry.date}T00:00:00`).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+        const amount = document.createElement("span");
+        amount.className = "entry-amount";
+        amount.textContent = money(Number(entry.amount));
+        const removeButton = document.createElement("button");
+        removeButton.className = "remove-entry";
+        removeButton.type = "button";
+        removeButton.setAttribute("aria-label", `Delete ${entry.item}`);
+        removeButton.title = "Delete entry";
+        removeButton.textContent = "×";
+        removeButton.addEventListener("click", () => {
+          expenses = expenses.filter((savedEntry) => savedEntry.id !== entry.id);
+          saveExpenses();
+          renderExpenseList();
+          updateBudget();
+          logMessage.textContent = "Expense removed.";
+        });
+        details.append(item, date);
+        row.append(details, amount, removeButton);
+        entryList.append(row);
+      }
+    }
+
+    function saveExpenses() {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(expenses));
+      } catch {
+        logMessage.textContent = "Could not save entries in browser storage.";
+      }
+    }
+
+    function updateLogSummary(budget) {
+      const date = new Date();
+      const monthPrefix = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const monthTotal = expenses
+        .filter((entry) => entry.date.startsWith(monthPrefix))
+        .reduce((total, entry) => total + Number(entry.amount), 0);
+      const balance = budget - monthTotal;
+      loggedTotal.textContent = money(monthTotal);
+      logBalanceLabel.textContent = balance < 0 ? "Over budget" : "Remaining this month";
+      logBalance.textContent = money(Math.abs(balance));
+      logBalance.classList.toggle("is-over", balance < 0);
+      return monthTotal;
+    }
+
+    function syncPageView() {
+      const showDailyLog = window.location.hash === "#daily-log";
+      const showAwsServices = window.location.hash === "#aws-services";
+      overviewView.hidden = showDailyLog || showAwsServices;
+      dailyLogView.hidden = !showDailyLog;
+      awsServicesView.hidden = !showAwsServices;
+      currentPageName.textContent = showDailyLog ? "Daily spend log" : showAwsServices ? "AWS service directory" : "Cost overview";
+      document.querySelectorAll(".nav a[data-view]").forEach((link) => {
+        const activeView = showDailyLog ? "daily-log" : showAwsServices ? "aws-services" : "overview";
+        if (link.dataset.view === activeView) {
+          link.setAttribute("aria-current", "page");
+        } else {
+          link.removeAttribute("aria-current");
+        }
+      });
+    }
+
+    function renderInsights(isOver, isNearLimit) {
+      const recommendations = isOver
+        ? [
+            { icon: "▲", title: "Cut EC2 load", text: "Scale down idle compute to save about ₹30–₹50 this cycle.", save: "₹30+" },
+            { icon: "▣", title: "Archive S3 data", text: "Move stale backups to cheaper storage classes.", save: "₹18" },
+            { icon: "✓", title: "Review bursts", text: "Trim peak Lambda invocations after 8 PM to reduce spikes.", save: "₹12" }
+          ]
+        : isNearLimit
+          ? [
+              { icon: "!", title: "Watch spend mix", text: "EC2 is driving most growth; reduce burst hours next week.", save: "₹22" },
+              { icon: "▤", title: "Schedule jobs", text: "Shift non-critical tasks to off-peak windows for lower demand.", save: "₹15" },
+              { icon: "◎", title: "Monitor threshold", text: "Your system is close to the configured alert band.", save: "90%" }
+            ]
+          : [
+              { icon: "✓", title: "Healthy runway", text: "You remain under budget with a comfortable buffer.", save: "₹52" },
+              { icon: "↑", title: "Add reserve", text: "Keep a small buffer for seasonal usage spikes.", save: "₹25" },
+              { icon: "◎", title: "Track trends", text: "Continue viewing the weekly cost curve to stay stable.", save: "On track" }
+            ];
+
+      insightList.innerHTML = recommendations.map((item) => `
+        <div class="insight-item">
+          <span class="insight-badge">${item.icon}</span>
+          <div class="insight-copy">
+            <strong>${item.title}</strong>
+            <div>${item.text}</div>
+          </div>
+          <span class="insight-save">${item.save}</span>
+        </div>
+      `).join("");
+    }
+
+    function updateBudget() {
+      const budget = Number(budgetSlider.value);
+      const isForecastOver = forecast > budget;
+      const loggedMonthTotal = updateLogSummary(budget);
+      const isLogOver = loggedMonthTotal > budget;
+      const isOver = isForecastOver || isLogOver;
+      const warningPercent = Number(warningThreshold.value);
+      const isNearLimit = !isOver && forecast >= budget * warningPercent / 100;
+      const chartMax = Math.max(450, forecast, budget);
+      const chartY = 134 - (budget / chartMax) * 114;
+      const percentage = Math.round((forecast / budget) * 100);
+      const limitLabel = money(budget);
+
+      budgetOutput.textContent = `₹${budget.toLocaleString("en-IN")}`;
+      budgetMetric.innerHTML = `₹${budget.toLocaleString("en-IN")}<small>.00</small>`;
+      oledBudget.textContent = `₹${budget.toLocaleString("en-IN")}`;
+      budgetSlider.style.setProperty("--fill", `${((budget - Number(budgetSlider.min)) / (Number(budgetSlider.max) - Number(budgetSlider.min))) * 100}%`);
+      capacityNote.textContent = `Forecast uses ${percentage}% of budget`;
+      capacityNote.className = `metric-note ${isOver ? "up" : isNearLimit ? "warning" : "down"}`;
+      const ledAlert = isOver && ledEnabled.checked;
+      deviceLed.classList.toggle("is-alert", ledAlert);
+      deviceLed.setAttribute("aria-label", ledAlert ? "Alert LED is on" : ledEnabled.checked ? "Alert LED is off" : "Alert LED is disabled");
+      alertBanner.style.background = isOver ? "var(--red-pale)" : isNearLimit ? "#fff8e8" : "#f0f6e9";
+      alertBanner.style.borderColor = isOver ? "#f2c4bb" : isNearLimit ? "#f0dbab" : "#d9e7ca";
+      alertBanner.style.color = isOver ? "#823c32" : isNearLimit ? "#795a20" : "#3e6040";
+      alertLamp.style.background = isOver ? "var(--red)" : isNearLimit ? "#d1a037" : "#6e9b58";
+      alertLamp.style.boxShadow = isOver ? "0 0 0 4px #e35f4c20" : isNearLimit ? "0 0 0 4px #d1a03724" : "0 0 0 4px #6e9b5820";
+      alertCopy.innerHTML = isOver
+        ? `<strong>${isForecastOver && isLogOver ? "Forecast and logged expenses are over your limit." : isLogOver ? "Logged expenses are over your limit." : "Forecast over your limit."}</strong> ${ledEnabled.checked ? "The desk LED is signalling an overspend." : "The LED alarm is disabled."}`
+        : isNearLimit
+          ? `<strong>Approaching your budget.</strong> Forecast has crossed your ${warningPercent}% early-warning threshold.`
+          : "<strong>You’re within your budget.</strong> Your current forecast is below the warning threshold.";
+      const loggedOverage = loggedMonthTotal - budget;
+      const forecastOverage = forecast - budget;
+      alertValue.textContent = isOver ? `+${money(isLogOver ? loggedOverage : forecastOverage)}` : isNearLimit ? `${warningPercent}% early warning` : `${money(budget - forecast)} headroom`;
+      renderInsights(isOver, isNearLimit);
+      budgetLine.setAttribute("y1", chartY.toFixed(1));
+      budgetLine.setAttribute("y2", chartY.toFixed(1));
+      budgetLabel.setAttribute("y", (chartY - 6).toFixed(1));
+      budgetLabel.textContent = `LIMIT ${limitLabel}`;
+      costPlot.setAttribute("transform", `translate(0 134) scale(1 ${450 / chartMax}) translate(0 -134)`);
+      [chartMax, chartMax * 2 / 3, chartMax / 3, 0].forEach((tick, index) => {
+        yTicks[index].textContent = `₹${tick.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+      });
+      currentRegion.textContent = regionSelect.value.toUpperCase();
+      syncState.textContent = `Slider value mirrored to OLED · ${money(spent)} spent`;
+    }
+
+    serviceSearch.addEventListener("input", () => renderServiceCatalog(serviceSearch.value));
+    budgetSlider.addEventListener("input", updateBudget);
+    warningThreshold.addEventListener("change", updateBudget);
+    ledEnabled.addEventListener("change", updateBudget);
+    regionSelect.addEventListener("change", updateBudget);
+    clearLogButton.addEventListener("click", () => {
+      if (expenses.length === 0 || !window.confirm("Reset the daily spend list? All saved expense entries will be deleted.")) return;
+      expenses = [];
+      saveExpenses();
+      renderExpenseList();
+      updateBudget();
+      logMessage.textContent = "Expense list reset.";
+    });
+    logForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const item = expenseItem.value.trim();
+      const amount = Number(expenseAmount.value);
+      if (!item || !Number.isFinite(amount) || amount <= 0) return;
+      expenses.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, item, date: expenseDate.value, amount });
+      saveExpenses();
+      renderExpenseList();
+      updateBudget();
+      logForm.reset();
+      expenseDate.value = currentDateString();
+      expenseItem.focus();
+      logMessage.textContent = "Expense saved in this browser.";
+    });
+    document.querySelector("#resetButton").addEventListener("click", () => {
+      budgetSlider.value = "320";
+      updateBudget();
+      syncState.textContent = "Budget reset to ₹320 · mirrored to OLED";
+    });
+    expenseDate.value = currentDateString();
+    renderServiceCatalog();
+    renderExpenseList();
+    updateBudget();
+    window.addEventListener("hashchange", syncPageView);
+    syncPageView();
+  </script>
+</body>
+</html>
